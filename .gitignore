@@ -1,0 +1,20 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local game saves
+saves/
+savegame.json
+*.dod
+
+# PyInstaller / executable build artifacts
+build/
+dist/
+*.spec
+
+# Editor & OS clutter
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
