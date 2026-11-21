@@ -485,4 +485,3 @@ class HDRenderer:
         self.screen.blit(self.small_font.render(state["status"], True, GOLD), (60, 505))
         prompt_text = "> [UNCONSCIOUS]" if (vitals.fainted and not vitals.dead) else f"> {state['cmd_buffer']}_"
         self.screen.blit(self.font.render(prompt_text, True, GOLD), (60, 535))
-        pygame.display.flip()

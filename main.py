@@ -10,18 +10,21 @@ from vitals import VitalsSystem
 from monsters import Monster, spawn_level_monsters
 from renderer import WireframeRenderer
 from hd_renderer import HDRenderer
+from gl_renderer import ModernGLRenderer
 from audio import SoundEngine
 from controls import InputController
 
 pygame.init()
-screen = pygame.display.set_mode((800, 600))
+screen = pygame.display.set_mode((800, 600), pygame.OPENGL | pygame.DOUBLEBUF)
 pygame.display.set_caption("Cinders & Echo")
 
-wire_renderer = WireframeRenderer(screen)
-hd_renderer = HDRenderer(screen)
+offscreen_2d = pygame.Surface((800, 600))
+wire_renderer = WireframeRenderer(offscreen_2d)
+hd_renderer = HDRenderer(offscreen_2d)
+gl_renderer = ModernGLRenderer(screen)
 sound = SoundEngine()
 controls = InputController()
-use_hd_gfx = True
+gfx_mode = "MODERN"  # "MODERN", "HD", or "WIREFRAME"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SAVE_DIR = os.path.join(BASE_DIR, "saves")
@@ -248,7 +251,7 @@ def update_monsters(dt):
 
 
 def execute_command(cmd):
-    global state, use_hd_gfx
+    global state, gfx_mode
     tokens = cmd.strip().upper().split()
     if not tokens:
         return
@@ -265,8 +268,9 @@ def execute_command(cmd):
         pygame.quit()
         sys.exit()
     if verb == "GFX":
-        use_hd_gfx = not use_hd_gfx
-        state["status"] = f"GRAPHICS MODE: {'HD 2.5D TEXTURES' if use_hd_gfx else 'CLASSIC WIREFRAME'}."
+        order = ["MODERN", "HD", "WIREFRAME"]
+        gfx_mode = order[(order.index(gfx_mode) + 1) % len(order)]
+        state["status"] = f"GRAPHICS MODE: {gfx_mode}."
         return
     if verb == "MUTE":
         sound.enabled = not sound.enabled
@@ -659,5 +663,11 @@ while True:
     if not controls.typing_mode and not vitals.fainted and not vitals.dead and not state.get("victory"):
         display_state["cmd_buffer"] = "[WASD / PAD ACTIVE - PRESS ENTER TO TYPE]"
 
-    active_renderer = hd_renderer if use_hd_gfx else wire_renderer
-    active_renderer.render_frame(display_state)
+    if gfx_mode == "MODERN":
+        gl_renderer.render_frame(display_state)
+    else:
+        active_2d = hd_renderer if gfx_mode == "HD" else wire_renderer
+        active_2d.render_frame(display_state)
+        gl_renderer.ctx.clear(0.0, 0.0, 0.0, 1.0)
+        gl_renderer.blit_pygame_surface(offscreen_2d)
+        pygame.display.flip()
